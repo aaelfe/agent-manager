@@ -4,9 +4,7 @@ WORKDIR /app
 
 COPY package*.json ./
 
-# Pre-install ARM64 specific dependencies
-RUN npm install @rollup/rollup-linux-arm64-gnu && \
-    npm install
+RUN npm install
 
 COPY . .
 
