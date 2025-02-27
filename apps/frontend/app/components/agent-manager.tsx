@@ -19,11 +19,35 @@ export default function Home() {
   }, [])
 
   const connectWebSocket = () => {
-    ws.current = new WebSocket("ws://localhost:8000/ws")
-    ws.current.onopen = () => setIsConnected(true)
-    ws.current.onclose = () => setIsConnected(false)
-    ws.current.onmessage = (event) => {
-      setMessages((prev) => [...prev, event.data])
+    // Make sure the WebSocket URL matches your backend
+    // Using the same origin as the current page can help avoid CORS issues
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.hostname}:8000/ws`;
+    
+    setMessages(prev => [...prev, `Connecting to WebSocket at ${wsUrl}`]);
+    
+    try {
+      ws.current = new WebSocket(wsUrl);
+      
+      ws.current.onopen = () => {
+        setIsConnected(true);
+        setMessages(prev => [...prev, "WebSocket connected"]);
+      };
+      
+      ws.current.onclose = (event) => {
+        setIsConnected(false);
+        setMessages(prev => [...prev, `WebSocket disconnected. Code: ${event.code}, Reason: ${event.reason || 'No reason provided'}`]);
+      };
+      
+      ws.current.onerror = (error) => {
+        setMessages(prev => [...prev, `WebSocket error: ${error.toString()}`]);
+      };
+      
+      ws.current.onmessage = (event) => {
+        setMessages((prev) => [...prev, event.data]);
+      };
+    } catch (error) {
+      setMessages(prev => [...prev, `Error creating WebSocket: ${error}`]);
     }
   }
 
@@ -36,28 +60,37 @@ export default function Home() {
   const sendMessage = () => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       ws.current.send(wsMessage)
+      setMessages(prev => [...prev, `Sent: ${wsMessage}`])
       setWsMessage("")
     }
   }
 
   const startAgent = async () => {
-    const response = await fetch("/api/start-agent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ agent_id: agentId }),
-    })
-    const data = await response.json()
-    setMessages((prev) => [...prev, JSON.stringify(data)])
+    try {
+      const response = await fetch("http://localhost:8000/start-agent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: agentId }),
+      })
+      const data = await response.json()
+      setMessages((prev) => [...prev, `Start agent response: ${JSON.stringify(data)}`])
+    } catch (error) {
+      setMessages((prev) => [...prev, `Error starting agent: ${error}`])
+    }
   }
 
   const stopAgent = async () => {
-    const response = await fetch("/api/stop-agent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ agent_id: agentId }),
-    })
-    const data = await response.json()
-    setMessages((prev) => [...prev, JSON.stringify(data)])
+    try {
+      const response = await fetch("http://localhost:8000/stop-agent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: agentId }),
+      })
+      const data = await response.json()
+      setMessages((prev) => [...prev, `Stop agent response: ${JSON.stringify(data)}`])
+    } catch (error) {
+      setMessages((prev) => [...prev, `Error stopping agent: ${error}`])
+    }
   }
 
   return (
