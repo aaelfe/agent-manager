@@ -26,5 +26,6 @@ services:
       - PORT=5173
       - HOST=0.0.0.0
       - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
     depends_on:
       - backend
