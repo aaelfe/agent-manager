@@ -1,5 +1,5 @@
 import type { MetaFunction } from "@remix-run/node";
-import AgentManager from "~/components/agent-manager";
+import AgentManager from "../components/agent-manager";
 export const meta: MetaFunction = () => {
   return [
     { title: "New Remix App" },

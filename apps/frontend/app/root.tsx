@@ -1,11 +1,16 @@
 import {
   Links,
+  Link,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
 } from "@remix-run/react";
 import type { LinksFunction } from "@remix-run/node";
+import { LoaderFunctionArgs, json } from "@remix-run/node";
+import { getCurrentUser } from "./lib/auth.server";
+import { AuthStatus } from "./components/auth-status";
 
 import "./tailwind.css";
 
@@ -22,7 +27,18 @@ export const links: LinksFunction = () => [
   },
 ];
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { user, headers } = await getCurrentUser(request);
+  
+  return json(
+    { user },
+    { headers }
+  );
+}
+
+export default function App() {
+  const { user } = useLoaderData<typeof loader>();
+
   return (
     <html lang="en">
       <head>
@@ -32,14 +48,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
+        <header className="p-4 border-b">
+          <div className="container mx-auto flex justify-between items-center">
+            <Link to="/" className="text-xl font-bold">
+              My App
+            </Link>
+            <AuthStatus user={user} />
+          </div>
+        </header>
+        <main className="container mx-auto py-4">
+          <Outlet />
+        </main>
         <ScrollRestoration />
         <Scripts />
       </body>
     </html>
   );
-}
-
-export default function App() {
-  return <Outlet />;
 }
